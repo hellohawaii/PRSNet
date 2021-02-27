@@ -4,7 +4,9 @@ from PRSNet import PRSNet
 from utils.visualization import dump_mesh_with_planes
 from criterion import compute_total_loss
 # Why import criterion not working?
-from pathlib import Path
+from pathlib import Path, PurePath
+from shutil import copyfile
+import os
 from tqdm import tqdm
 import datetime
 
@@ -12,6 +14,7 @@ import datetime
 # global variables
 testing_ids = ["04379243"]  # table
 testing_data_path = r"E:\workfile\PRSNet\Preprocessed_ShapeNet\V2"
+# testing_data_path = r"E:\workfile\PRSNet\Preprocessed_ShapeNet\single_model"
 batch_size = 1
 
 
@@ -49,8 +52,25 @@ def test(model, dataset, ckpt_manager):
         loss, planes, quaternions = test_step(model, voxel_i, points_i, nearest_pts_i)
         # visualization
         test_mesh_path = obj_path.numpy()[-1].decode('UTF-8')
-        output_path = 'result/' + trained_time + '/test/logs/result' + str(optimizer.iterations.numpy()) + '.obj'
+        shape_id = PurePath(test_mesh_path).parts[-3]
+        model_id = PurePath(test_mesh_path).parts[-2]
+        rotation_name = PurePath(test_mesh_path).stem
+        # TODO： copy from the original dataset
+        # make dirs
+        output_dir_path = 'result/' + trained_time + '/test/logs/result/' + shape_id + '/' + model_id
+        os.makedirs(output_dir_path, exist_ok=True)
+        # copy obj and binvox for compare
+        src_obj_file = os.path.join(testing_data_path, shape_id, model_id, rotation_name + '.obj')
+        dest_obj_file = os.path.join(output_dir_path, rotation_name + '.obj')
+        copyfile(src_obj_file, dest_obj_file)
+        src_binvox_file = os.path.join(testing_data_path, shape_id, model_id, rotation_name+'.binvox')
+        dest_binvox_file = os.path.join(output_dir_path, rotation_name+'.binvox')
+        copyfile(src_binvox_file, dest_binvox_file)
+        # output mesh with plane
+        output_path = 'result/' + trained_time + '/test/logs/result/' + shape_id + '/' + model_id + '/' + \
+                      rotation_name + '_with_plane.obj'
         dump_mesh_with_planes(test_mesh_path, output_path, planes[-1])
+
 
 
 tf.config.experimental_run_functions_eagerly(True)
