@@ -94,7 +94,10 @@ def train(model, optimizer, dataset, ckpt_manager, log_freq=10, save_freq_step=1
                 test_mesh_path = obj_path.numpy()[-1].decode('UTF-8')
                 # output_path = test_mesh_path[0:-4]+"_with_result.obj"
                 output_path = 'result/' + current_time + '/train/logs/result' + str(int(ckpt_manager.checkpoint.step)) + '.obj'
-                dump_mesh_with_planes(test_mesh_path, output_path, planes[-1])
+                try:
+                    dump_mesh_with_planes(test_mesh_path, output_path, planes[-1])
+                except:
+                    pass
                 # mesh_to_be_visulized = trimesh.load(output_path)
                 # mesh_summary.op('mesh', vertices=np.expand_dims(mesh_to_be_visulized.vertices, axis=0),
                 #                 faces=np.expand_dims(mesh_to_be_visulized.faces, axis=0))

@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 shape_net_path = r"E:\workfile\PRSNet\ShapeNetCore.v2"
 selected_shape_ids = ["04379243"]  # table
-process_output_path = r"E:\workfile\PRSNet\Preprocessed_ShapeNet\V2"
+process_output_path = r"E:\workfile\PRSNet\Preprocessed_ShapeNet\v2_using_new_distance"
 binvox_path = r"E:\workfile\PRSNet\binvox\binvox.exe"
 resolution = 32
 
@@ -62,17 +62,56 @@ for selected_shape_id in selected_shape_ids:
             voxel_numpy = np.array(voxel_grid.matrix).astype(int)
             # sample on the mesh
             sample_pts, _ = trimesh.sample.sample_surface(mesh, count=1000)
-            # TODO: find a more efficient way
-            nearest_pts = np.empty([resolution, resolution, resolution, 3])
-            for x_coor in range(resolution):
-                for y_coor in range(resolution):
-                    for z_coor in range(resolution):
-                        half_resolution = resolution / 2
-                        offset = np.array([-half_resolution + 0.5, -half_resolution + 0.5, -half_resolution + 0.5])
-                        xyz_coor = (np.array([x_coor, y_coor, z_coor], dtype=np.float32) + offset) / resolution
-                        nearest_pt_id = np.argmin(np.sum(np.square((xyz_coor - sample_pts)), axis=1))
-                        nearest_pt = sample_pts[nearest_pt_id]
-                        nearest_pts[x_coor, y_coor, z_coor, :] = nearest_pt
+
+            # # SOLUTION ONE
+            # # try to use Structure of Array to generate coordinates
+            # # in x/y/z_coors, x index change first, x majority
+            # # x: 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2
+            # # y: 0, 0, 0, 1, 1, 1, 2, 2, 2, 0, 0, 0, 1, 1, 1, 2, 2, 2, 0, 0, 0, 1, 1, 1, 2, 2, 2,
+            # # z: 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+            # coor_before_reshape = np.tile(np.arange(0, resolution), [resolution*resolution]).reshape([resolution, resolution, resolution])
+            # x_coors = coor_before_reshape.transpose([0, 1, 2]).flatten()
+            # y_coors = coor_before_reshape.transpose([0, 2, 1]).flatten()
+            # z_coors = coor_before_reshape.transpose([2, 0, 1]).flatten()
+            # # xyz_coors index like this: [x,y,z] = xyz_coors[z_index, y_index, x_index] after executing the line below
+            # xyz_coors = np.stack([x_coors, y_coors, z_coors], axis=1).reshape([resolution, resolution, resolution, 3])
+            # # xyz_coors index like this: [x,y,z] = xyz_coors[x_index, y_index, z_index] after executing the line below
+            # xyz_coors = xyz_coors.transpose([2, 1, 0, 3])
+            # # perhaps if we use z majority during constructing x/y/z_coors, we do not need transpose after reshaping
+            # half_resolution = resolution / 2
+            # offset = np.array([-half_resolution + 0.5, -half_resolution + 0.5, -half_resolution + 0.5])
+            # xyz_coors = (xyz_coors + offset) / resolution
+
+            # # SOLUTION TWO
+            # # in x/y/z_coors, z index change first, z majority
+            # # z: 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2
+            # # y: 0, 0, 0, 1, 1, 1, 2, 2, 2, 0, 0, 0, 1, 1, 1, 2, 2, 2, 0, 0, 0, 1, 1, 1, 2, 2, 2,
+            # # x: 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+            # coor_before_reshape = np.tile(np.arange(0, resolution), [resolution * resolution]).reshape(
+            #     [resolution, resolution, resolution])
+            # z_coors = coor_before_reshape.transpose([0, 1, 2]).flatten()
+            # y_coors = coor_before_reshape.transpose([0, 2, 1]).flatten()
+            # x_coors = coor_before_reshape.transpose([2, 0, 1]).flatten()
+            # # xyz_coors index like this: [x,y,z] = xyz_coors[x_index, y_index, z_index] after executing the line below
+            # xyz_coors = np.stack([x_coors, y_coors, z_coors], axis=1).reshape([resolution, resolution, resolution, 3])
+            # half_resolution = resolution / 2
+            # offset = np.array([-half_resolution + 0.5, -half_resolution + 0.5, -half_resolution + 0.5])
+            # xyz_coors = (xyz_coors + offset) / resolution
+
+            # SOLUTION THREE
+            # using meshgrid
+            zero2resolution = np.arange(0, resolution)
+            x_coors, y_coors, z_coors = np.meshgrid(zero2resolution, zero2resolution, zero2resolution, indexing='ij')
+            xyz_coors = np.stack([x_coors, y_coors, z_coors], axis=-1).reshape([resolution, resolution, resolution, 3])
+            # the following is the same as the code above
+            half_resolution = resolution / 2
+            offset = np.array([-half_resolution + 0.5, -half_resolution + 0.5, -half_resolution + 0.5])
+            xyz_coors = (xyz_coors + offset) / resolution
+
+            # reshape to list, find nearest pts, then reshape the result back to N*N*N*3
+            xyz_coors = xyz_coors.reshape([-1, 3])
+            nearest_pts, _, _ = mesh.nearest.on_surface(xyz_coors)
+            nearest_pts.reshape([resolution, resolution, resolution, 3])
 
             output_numpy_path = os.path.join(process_output_path, selected_shape_id, model_id,
                                              "rotated_"+str(rotate_i)+"_preprocessed.npz")
