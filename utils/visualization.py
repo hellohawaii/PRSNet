@@ -37,15 +37,48 @@ def dump_mesh_with_planes(mesh_file_path, output_mesh_file, planes):
         pass
     else:
         mesh = trimesh.scene.scene.Scene(geometry=mesh)
+    tolerance = 2.5
     for i in range(planes.shape[0]):
         a = planes[i, 0]
         b = planes[i, 1]
         c = planes[i, 2]
         d = planes[i, 3]
-        v0 = [-0.5, -0.5, (-d+0.5*a+0.5*b)/c]
-        v1 = [-0.5, +0.5, (-d+0.5*a-0.5*b)/c]
-        v2 = [+0.5, -0.5, (-d-0.5*a+0.5*b)/c]
-        v3 = [+0.5, +0.5, (-d-0.5*a-0.5*b)/c]
+        z0 = (-d+0.5*a+0.5*b)/c
+        z1 = (-d+0.5*a-0.5*b)/c
+        z2 = (-d-0.5*a+0.5*b)/c
+        z3 = (-d-0.5*a-0.5*b)/c
+        if -0.5 <= z0/tolerance <= 0.5 and -0.5 <= z1/tolerance <= 0.5 and -0.5 <= z2/tolerance <= 0.5 and -0.5 <= z3/tolerance <= 0.5:
+            # based on XY
+            v0 = [-0.5, -0.5, z0]
+            v1 = [-0.5, +0.5, z1]
+            v2 = [+0.5, -0.5, z2]
+            v3 = [+0.5, +0.5, z3]
+        else:
+            y0 = (-d+0.5*a+0.5*c)/b
+            y1 = (-d+0.5*a-0.5*c)/b
+            y2 = (-d-0.5*a+0.5*c)/b
+            y3 = (-d-0.5*a-0.5*c)/b
+            if -0.5 <= y0/tolerance <= 0.5 and -0.5 <= y1/tolerance <= 0.5 and -0.5 <= y2/tolerance <= 0.5 and -0.5 <= y3/tolerance <= 0.5:
+                v0 = [-0.5, y0, -0.5]
+                v1 = [-0.5, y1, +0.5]
+                v2 = [+0.5, y2, -0.5]
+                v3 = [+0.5, y3, +0.5]
+            else:
+                x0 = (-d + 0.5 * c + 0.5 * b) / a
+                x1 = (-d - 0.5 * c + 0.5 * b) / a
+                x2 = (-d + 0.5 * c - 0.5 * b) / a
+                x3 = (-d - 0.5 * c - 0.5 * b) / a
+                if -0.5 <= x0/tolerance <= 0.5 and -0.5 <= x1/tolerance <= 0.5 and -0.5 <= x2/tolerance <= 0.5 and -0.5 <= x3/tolerance <= 0.5:
+                    v0 = [x0, -0.5, -0.5]
+                    v1 = [x1, -0.5, +0.5]
+                    v2 = [x2, +0.5, -0.5]
+                    v3 = [x3, +0.5, +0.5]
+                else:
+                    # TODO: compare the area and find the smallest triangle
+                    v0 = [x0, -0.5, -0.5]
+                    v1 = [x1, -0.5, +0.5]
+                    v2 = [x2, +0.5, -0.5]
+                    v3 = [x3, +0.5, +0.5]
         try:
             plane_mesh = trimesh.Trimesh(vertices=[v0, v1, v2, v3], faces=[[0, 1, 2], [3, 2, 1]])
         except:

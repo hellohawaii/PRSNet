@@ -13,7 +13,7 @@ import datetime
 
 # global variables
 testing_ids = ["04379243"]  # table
-testing_data_path = r"E:\workfile\PRSNet\Preprocessed_ShapeNet\V2"
+testing_data_path = r"E:\workfile\PRSNet\Preprocessed_ShapeNet\v2_using_new_distance_train"
 # testing_data_path = r"E:\workfile\PRSNet\Preprocessed_ShapeNet\single_model"
 batch_size = 1
 
@@ -25,6 +25,7 @@ def load_testing_numpy_data(data_path):
     voxel = np.expand_dims(numpy_data["voxel"], axis=-1)  # convert from (32, 32, 32) to (32, 32, 32, 1)
     points = numpy_data["points"]
     nearest_pts = numpy_data["nearest_pts"]
+    nearest_pts = numpy_data["nearest_pts"].reshape([32, 32, 32, 3])  # tmp add
     obj_path = path_str.decode('UTF-8')[0:-16] + "normed_model.obj"
     return voxel, points, nearest_pts, obj_path
 
@@ -84,7 +85,7 @@ testing_dataset = data_path_dataset.map(lambda x: tf.py_function(load_testing_nu
                                                                  [tf.float32, tf.float32, tf.float32, tf.string]))
 testing_dataset = testing_dataset.batch(batch_size=batch_size)
 
-trained_time = '20210226-183451'
+trained_time = '20210304-120500'
 ckpt = tf.train.Checkpoint(net=prs_model)
 test_ckpt_dir = 'result/' + trained_time + '/train/model'
 ckpt_manager = tf.train.CheckpointManager(ckpt, test_ckpt_dir, max_to_keep=3)
