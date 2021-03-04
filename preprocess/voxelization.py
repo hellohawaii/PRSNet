@@ -118,7 +118,7 @@ for selected_shape_id in selected_shape_ids:
                 # reshape to list, find nearest pts, then reshape the result back to N*N*N*3
                 xyz_coors = xyz_coors.reshape([-1, 3])
                 nearest_pts, _, _ = mesh.nearest.on_surface(xyz_coors)
-                nearest_pts.reshape([resolution, resolution, resolution, 3])
+                nearest_pts = nearest_pts.reshape([resolution, resolution, resolution, 3])
 
                 output_numpy_path = os.path.join(process_output_path, selected_shape_id, model_id,
                                                  "rotated_"+str(rotate_i)+"_preprocessed.npz")

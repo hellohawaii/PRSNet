@@ -31,6 +31,7 @@ def load_training_numpy_data(data_path):
     voxel = np.expand_dims(numpy_data["voxel"], axis=-1)  # convert from (32, 32, 32) to (32, 32, 32, 1)
     points = numpy_data["points"]
     nearest_pts = numpy_data["nearest_pts"]
+    nearest_pts = numpy_data["nearest_pts"].reshape([32, 32, 32, 3])  # tmp add
     obj_path = path_str.decode('UTF-8')[0:-16] + "normed_model.obj"
     return voxel, points, nearest_pts, obj_path
     # return tf.io.read_file(data_path)
@@ -119,8 +120,8 @@ training_dataset = data_path_dataset.map(lambda x: tf.py_function(load_training_
                                                                   [tf.float32, tf.float32, tf.float32, tf.string]))
 training_dataset = training_dataset.batch(batch_size=batch_size)
 
-# current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-current_time = '20210226-183451'
+current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+# current_time = '20210226-183451'
 train_log_dir = 'result/' + current_time + '/train/logs'
 train_summary_writer = tf.summary.create_file_writer(train_log_dir)
 
