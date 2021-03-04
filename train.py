@@ -15,7 +15,8 @@ import trimesh
 
 # global variables
 training_ids = ["04379243"]  # table
-training_data_path = r"E:\workfile\PRSNet\Preprocessed_ShapeNet\V2"
+# training_data_path = r"E:\workfile\PRSNet\Preprocessed_ShapeNet\V2"
+training_data_path = r"E:\workfile\PRSNet\Preprocessed_ShapeNet\v2_using_new_distance"
 # training_data_path = r"E:\workfile\PRSNet\Preprocessed_ShapeNet\single_model"
 max_epochs = 50000
 batch_size = 32
