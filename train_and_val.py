@@ -16,14 +16,14 @@ import trimesh
 # global variables
 training_ids = ["04379243"]  # table
 # training_data_path = r"E:\workfile\PRSNet\Preprocessed_ShapeNet\V2"
-training_data_path = r"E:\workfile\PRSNet\Preprocessed_ShapeNet\v2_using_new_distance_train"
+training_data_path = r"/content/Data/v2_using_new_distance_train"
 # training_data_path = r"E:\workfile\PRSNet\Preprocessed_ShapeNet\single_model"
 max_epochs = 50000
 batch_size = 32
 
 # global variables
 val_ids = ["04379243"]  # table
-val_data_path = r"E:\workfile\PRSNet\Preprocessed_ShapeNet\v2_using_new_distance_test"
+val_data_path = r"/content/Data/v2_using_new_distance_test"
 # val_data_path = r"E:\workfile\PRSNet\Preprocessed_ShapeNet\single_model"
 val_batch_size = 8
 
@@ -149,8 +149,8 @@ val_dataset = data_path_dataset.map(lambda x: tf.py_function(load_val_numpy_data
 val_dataset = val_dataset.batch(batch_size=val_batch_size)
 
 
-current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-# current_time = '20210226-183451'
+# current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+current_time = '20210304-123100'
 train_log_dir = 'result/' + current_time + '/train/logs'
 val_log_dir = 'result/' + current_time + '/val/logs'
 train_summary_writer = tf.summary.create_file_writer(train_log_dir)
