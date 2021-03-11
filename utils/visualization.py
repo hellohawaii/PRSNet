@@ -117,12 +117,14 @@ def dump_mesh_with_planes_PCA(mesh_file_path, output_mesh_file, planes):
         pca_space_lower_bound = np.amin(projected_mesh_vertices_pca_space, axis=0)
         pca_space_upper_bound = np.amax(projected_mesh_vertices_pca_space, axis=0)
         # compute plane in pca space
-        area_factor = 1.0  # change the size of visualized plane related to mesh
+        area_factor = 1.2  # change the size of visualized plane related to mesh
         area_factor = area_factor/2.0 + 0.5
         pca_space_span = (pca_space_upper_bound - pca_space_lower_bound) * area_factor
         plane_pca_space_lower_bound = pca_space_upper_bound - pca_space_span  # shape (3,)
         plane_pca_space_upper_bound = pca_space_lower_bound + pca_space_span  # shape (3,)
-        pca_x1, pca_y1 = np.meshgrid(plane_pca_space_lower_bound, plane_pca_space_upper_bound, indexing='ij')
+        plane_axis_range = np.stack([plane_pca_space_lower_bound, pca_space_upper_bound]).T  # plane_axis_range[i] is the
+        # range of the ith pca axis.
+        pca_x1, pca_y1 = np.meshgrid(plane_axis_range[0,:], plane_axis_range[1, :], indexing='ij')
         # pca_x1, pca_y1 = np.meshgrid(plane_pca_space_lower_bound, plane_pca_space_upper_bound)
         plane_vertices_pca = np.stack([pca_x1.flatten(), pca_y1.flatten()], axis=1)
         # map back to laboratory coordinate system
@@ -131,14 +133,8 @@ def dump_mesh_with_planes_PCA(mesh_file_path, output_mesh_file, planes):
         v2 = np.matmul(plane_vertices_pca[2, :], pca.components_) + pca.mean_  # shape(3,)
         v3 = np.matmul(plane_vertices_pca[3, :], pca.components_) + pca.mean_  # shape(3,)
 
-        # debug
-        projected_mesh_vertices2 = np.matmul(projected_mesh_vertices_pca_space, pca.components_) + pca.mean_
-        projected_mesh_vertices3 = np.matmul(projected_mesh_vertices_pca_space[0, :], pca.components_) + pca.mean_
-
         plane_mesh = trimesh.Trimesh(vertices=[v0, v1, v2, v3], faces=[[0, 1, 2], [3, 2, 1]])
-        projected_mesh = trimesh.Trimesh(vertices=projected_mesh_vertices, faces=geometry_list[0][1].faces)
         mesh.add_geometry(plane_mesh)
-        mesh.add_geometry(projected_mesh)
     # all_geometry_list = list(mesh.geometry.items())
     # mesh.delete_geometry(all_geometry_list[0][0])
     mesh.export(output_mesh_file)
