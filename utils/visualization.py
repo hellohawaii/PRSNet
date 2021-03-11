@@ -122,7 +122,7 @@ def dump_mesh_with_planes_PCA(mesh_file_path, output_mesh_file, planes):
         pca_space_span = (pca_space_upper_bound - pca_space_lower_bound) * area_factor
         plane_pca_space_lower_bound = pca_space_upper_bound - pca_space_span  # shape (3,)
         plane_pca_space_upper_bound = pca_space_lower_bound + pca_space_span  # shape (3,)
-        plane_axis_range = np.stack([plane_pca_space_lower_bound, pca_space_upper_bound]).T  # plane_axis_range[i] is the
+        plane_axis_range = np.stack([plane_pca_space_lower_bound, plane_pca_space_upper_bound]).T  # plane_axis_range[i] is the
         # range of the ith pca axis.
         pca_x1, pca_y1 = np.meshgrid(plane_axis_range[0,:], plane_axis_range[1, :], indexing='ij')
         # pca_x1, pca_y1 = np.meshgrid(plane_pca_space_lower_bound, plane_pca_space_upper_bound)
@@ -134,10 +134,15 @@ def dump_mesh_with_planes_PCA(mesh_file_path, output_mesh_file, planes):
         v3 = np.matmul(plane_vertices_pca[3, :], pca.components_) + pca.mean_  # shape(3,)
 
         plane_mesh = trimesh.Trimesh(vertices=[v0, v1, v2, v3], faces=[[0, 1, 2], [3, 2, 1]])
+        plane_mesh.visual.vertex_colors = [0, 255, 0, 50]
+        # plane_mesh.visual.face_colors = [0, 255, 0, 50]
+        # plane_mesh.show()
+        # trimesh.visual.color.ColorVisuals(mesh=plane_mesh, face_colors=None, vertex_colors=None)
         mesh.add_geometry(plane_mesh)
     # all_geometry_list = list(mesh.geometry.items())
     # mesh.delete_geometry(all_geometry_list[0][0])
-    mesh.export(output_mesh_file)
+    # mesh.show()
+    mesh.export(output_mesh_file, include_normals=False, include_color=True)
 
 
 def dump_mesh_with_axis(mesh_file_path, axis):
