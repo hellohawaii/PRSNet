@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 # import pyvista as pv
 import trimesh
+from sklearn.decomposition import PCA
 
 
 def visualize_voxel(volume):
@@ -85,8 +86,61 @@ def dump_mesh_with_planes(mesh_file_path, output_mesh_file, planes):
             import pdb
             pdb.set_trace()
         mesh.add_geometry(plane_mesh)
-    if isinstance(mesh, trimesh.Scene):
+    # if isinstance(mesh, trimesh.Scene):
+    #     mesh = mesh.dump(concatenate=True)
+    mesh.export(output_mesh_file)
+
+
+def dump_mesh_with_planes_PCA(mesh_file_path, output_mesh_file, planes):
+    mesh = trimesh.load(mesh_file_path)
+    if isinstance(mesh, trimesh.scene.scene.Scene):
+        # print("scene")
         mesh = mesh.dump(concatenate=True)
+    else:
+        # print("mesh")
+        mesh = trimesh.scene.scene.Scene(geometry=mesh)
+    for i in range(planes.shape[0]):
+        # projection
+        geometry_list = list(mesh.geometry.items())
+        # print(len(geometry_list))
+        mesh_vertices = geometry_list[0][1].vertices
+        # assuming line is represented in parametric equation, solving with the plane equation simultaneously
+        plane_abc = planes[i, 0:3]
+        plane_d = planes[i, 3]
+        # t is the parameter of the line's parametric function
+        t = np.divide(np.add(np.inner(mesh_vertices, plane_abc), plane_d), np.sum(np.square(plane_abc)))
+        projected_mesh_vertices = mesh_vertices - \
+            np.multiply(np.expand_dims(t, axis=1), np.expand_dims(plane_abc, axis=0))
+        # do PCA
+        pca = PCA(n_components=2)
+        projected_mesh_vertices_pca_space = pca.fit_transform(projected_mesh_vertices)
+        pca_space_lower_bound = np.amin(projected_mesh_vertices_pca_space, axis=0)
+        pca_space_upper_bound = np.amax(projected_mesh_vertices_pca_space, axis=0)
+        # compute plane in pca space
+        area_factor = 1.0  # change the size of visualized plane related to mesh
+        area_factor = area_factor/2.0 + 0.5
+        pca_space_span = (pca_space_upper_bound - pca_space_lower_bound) * area_factor
+        plane_pca_space_lower_bound = pca_space_upper_bound - pca_space_span  # shape (3,)
+        plane_pca_space_upper_bound = pca_space_lower_bound + pca_space_span  # shape (3,)
+        pca_x1, pca_y1 = np.meshgrid(plane_pca_space_lower_bound, plane_pca_space_upper_bound, indexing='ij')
+        # pca_x1, pca_y1 = np.meshgrid(plane_pca_space_lower_bound, plane_pca_space_upper_bound)
+        plane_vertices_pca = np.stack([pca_x1.flatten(), pca_y1.flatten()], axis=1)
+        # map back to laboratory coordinate system
+        v0 = np.matmul(plane_vertices_pca[0, :], pca.components_) + pca.mean_  # shape(3,)
+        v1 = np.matmul(plane_vertices_pca[1, :], pca.components_) + pca.mean_  # shape(3,)
+        v2 = np.matmul(plane_vertices_pca[2, :], pca.components_) + pca.mean_  # shape(3,)
+        v3 = np.matmul(plane_vertices_pca[3, :], pca.components_) + pca.mean_  # shape(3,)
+
+        # debug
+        projected_mesh_vertices2 = np.matmul(projected_mesh_vertices_pca_space, pca.components_) + pca.mean_
+        projected_mesh_vertices3 = np.matmul(projected_mesh_vertices_pca_space[0, :], pca.components_) + pca.mean_
+
+        plane_mesh = trimesh.Trimesh(vertices=[v0, v1, v2, v3], faces=[[0, 1, 2], [3, 2, 1]])
+        projected_mesh = trimesh.Trimesh(vertices=projected_mesh_vertices, faces=geometry_list[0][1].faces)
+        mesh.add_geometry(plane_mesh)
+        mesh.add_geometry(projected_mesh)
+    # all_geometry_list = list(mesh.geometry.items())
+    # mesh.delete_geometry(all_geometry_list[0][0])
     mesh.export(output_mesh_file)
 
 

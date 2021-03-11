@@ -5,9 +5,9 @@ from utils.visualization import visualize_voxel
 from tqdm import tqdm
 
 
-shape_net_path = r"E:\workfile\PRSNet\ShapeNetCore.v2"
+shape_net_path = r"E:\workfile\PRSNet\Preprocessed_ShapeNet\v2_selected_test_before_preprocessing"
 selected_shape_ids = ["04379243"]  # table
-process_output_path = r"E:\workfile\PRSNet\Preprocessed_ShapeNet\v2_using_new_distance"
+process_output_path = r"E:\workfile\PRSNet\Preprocessed_ShapeNet\v2_selected_test_preprocessed"
 binvox_path = r"E:\workfile\PRSNet\binvox\binvox.exe"
 resolution = 32
 using_500_model = True
@@ -18,6 +18,7 @@ for selected_shape_id in selected_shape_ids:
         models_ids = models_ids[0:500]
     # referring to https://stackoverflow.com/questions/23113494/double-progress-bar-in-python
     for model_id in tqdm(models_ids, position=0, leave=True):
+    # for model_id in models_ids:
         model_path = os.path.join(shape_net_path, selected_shape_id, model_id, "models", "model_normalized.obj")
         output_dir_path = os.path.join(process_output_path, selected_shape_id, model_id)
         if not os.path.isdir(output_dir_path):
@@ -30,11 +31,11 @@ for selected_shape_id in selected_shape_ids:
         # as mesh.geometry, a dict of trimesh. This make voxelization difficult, trimesh.exchange.binvox.voxelize_mesh
         # not working. use dump to convert it into a single mesh
         if using_500_model:
-            rotation_times = 3
+            rotation_times = 150
         else:
             rotation_times = 4000 // len(models_ids) + 1
         try:
-            for rotate_i in range(rotation_times):
+            for rotate_i in tqdm(range(rotation_times), position=1, leave=True):
                 mesh.apply_transform(trimesh.transformations.random_rotation_matrix())
                 bounds = mesh.bounds  # 2*3, min and max for 3 dimensions
                 # mesh.vertices()

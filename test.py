@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 from PRSNet import PRSNet
-from utils.visualization import dump_mesh_with_planes
+from utils.visualization import dump_mesh_with_planes_PCA
 from criterion import compute_total_loss
 # Why import criterion not working?
 from pathlib import Path, PurePath
@@ -13,7 +13,8 @@ import datetime
 
 # global variables
 testing_ids = ["04379243"]  # table
-testing_data_path = r"E:\workfile\PRSNet\Preprocessed_ShapeNet\v2_using_new_distance_train"
+# testing_data_path = r"E:\workfile\PRSNet\Preprocessed_ShapeNet\v2_using_new_distance_train"
+testing_data_path = r"E:\workfile\PRSNet\Preprocessed_ShapeNet\v2_selected_test_preprocessed"
 # testing_data_path = r"E:\workfile\PRSNet\Preprocessed_ShapeNet\single_model"
 batch_size = 1
 
@@ -69,8 +70,8 @@ def test(model, dataset, ckpt_manager):
         copyfile(src_binvox_file, dest_binvox_file)
         # output mesh with plane
         output_path = 'result/' + trained_time + '/test/logs/result/' + shape_id + '/' + model_id + '/' + \
-                      rotation_name + '_with_plane.obj'
-        dump_mesh_with_planes(test_mesh_path, output_path, planes[-1])
+                      'loss' + str(int(loss)) + rotation_name + '_with_plane' + '.obj'
+        dump_mesh_with_planes_PCA(test_mesh_path, output_path, planes[-1])
 
 
 
